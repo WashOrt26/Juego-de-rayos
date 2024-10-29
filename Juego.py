@@ -2,6 +2,7 @@ import random
 
 import pygame
 
+
 pygame.init()
 pygame.font.init()
 
@@ -505,7 +506,8 @@ def escena_separador(woodstock_dialogo_index2=0, woodstock_x2=-50):
 
 def escena_3():
     global woodstock_movimiento2, woodstock_x, woodstock_contador, woodstock_animacion, woodstock_hablando2, boton_interrogacion_activo
-    # Posiciones iniciales y otras variables de la escena
+
+    # Variables de la nube y Snoopy
     posicion_x_nube2 = random.randint(0, screen_width - 153)
     posicion_y_nube2 = 50
     posicion_x_snoopy2 = random.randint(0, screen_width - 150)
@@ -520,19 +522,15 @@ def escena_3():
     mirando_derecha2 = True
     boton_rayo_presionado2 = False
 
-    # Inicializar cargas en la nube
+    # Cargas en el suelo y en la nube
+    # Inicializar cargas en el suelo
     cantidad_cargas_suelo2 = 6
-    cargas_suelo3 = [[random.randint(0, screen_width - 20), screen_height - 40, carga_positiva_img] for _ in range(cantidad_cargas_suelo2)]
-    # Áreas para las cargas en la nube
-    area_cargas_positivas = (posicion_x_nube2, posicion_y_nube2, 153, 40)  # Parte superior de la nube
-    area_cargas_negativas = (posicion_x_nube2, posicion_y_nube2 + 45, 120, 40)  # Parte inferior de la nube (ajustado)
-
-
-    # Generar posiciones y movimiento de cargas en la nube
-    cantidad_cargas_nube = 10
+    cargas_suelo = [[random.randint(0, screen_width - 20), screen_height - 40, carga_positiva_img] for _ in range(cantidad_cargas_suelo2)]
+    area_cargas_positivas = (posicion_x_nube2, posicion_y_nube2, 153, 40)
+    area_cargas_negativas = (posicion_x_nube2, posicion_y_nube2 + 45, 120, 40)
     cargas_en_nube3 = []
 
-    # Añadir partículas positivas a la parte superior y negativas a la inferior
+    # Partículas en la nube
     for _ in range(6):
         carga_x = random.randint(0, area_cargas_positivas[2] - 20)
         carga_y = random.randint(0, area_cargas_positivas[3] - 20)
@@ -545,74 +543,99 @@ def escena_3():
         direccion = random.choice([-1, 1])
         cargas_en_nube3.append([carga_negativa_img, carga_x, carga_y, direccion])
 
-    def mover_cargas_en_tren(posicion_x_nube2, posicion_y_nube2):
-        """Inicia el intercambio de cargas desde el suelo a la nube."""
-        global cargas_suelo3, cargas_en_nube3
+    velocidad_intercambio = 4
+    intercambio_activo = False
+    mostrar_rayo = False
 
-        for i, carga_suelo in enumerate(cargas_suelo3):
-            carga_x, carga_y = carga_suelo
-            while carga_x != posicion_x_nube2:
-                carga_x += 1 if carga_x < posicion_x_nube2 else -1  # Movimiento en x hacia la nube
-                pantalla_principal(posicion_x_nube2)
-                pygame.display.flip()
-
-            while carga_y > posicion_y_nube2 + i * 10:
-                carga_y -= 1  # Movimiento en y hacia la nube
-                pantalla_principal(posicion_x_nube2)
-                pygame.display.flip()
-                pygame.time.delay(10)
-
-            # Al llegar a la nube, intercambiar con una carga en la nube
-            if i < len(cargas_en_nube3):
-                cargas_en_nube3[i][1], cargas_en_nube3[i][2] = carga_x - posicion_x_nube2, carga_y - posicion_y_nube2
-                cargas_suelo3[i] = [random.randint(0, screen_width - 20), screen_height - 40, tipo_carga]
-
-    def pantalla_principal(posicion_x_nube2):
-        """Dibuja fondo, nube, botón y cargas en pantalla."""
+    def pantalla_principal():
+        """Dibuja la escena principal y la nube con cargas."""
         screen.blit(fondo2, (0, 0))
         screen.blit(nube1, (posicion_x_nube2, posicion_y_nube2))
 
-        # Dibujar botón de rayo
+        # Redibuja Snoopy y otros elementos aquí
+        screen.blit(casita_snopy, (340, 178))  # Asegúrate de redibujar Snoopy y otros elementos
+
         mouse_pos = pygame.mouse.get_pos()
+
+        # Botón de rayo
         boton_rayo_rect = pygame.Rect(rayo_pos, (60, 60))
         screen.blit(imagen_rayo_hover if boton_rayo_rect.collidepoint(mouse_pos) else imagen_rayo, rayo_pos)
 
         # Dibujar cargas en el suelo
-        for carga in cargas_suelo3:
+        for carga in cargas_suelo:
             screen.blit(carga[2], (carga[0], carga[1]))
 
         # Dibujar cargas en la nube
         for carga in cargas_en_nube3:
             tipo_carga, carga_x, carga_y, direccion = carga
-
-            # Mover la carga dentro de los límites de la nube
-            carga_x += direccion  # Movimiento horizontal
+            carga_x += direccion
             if carga_x <= 0 or carga_x >= area_cargas_positivas[2] - 20:
-                carga[3] *= -1  # Invertir dirección
-
-            # Dibujar la carga en la posición actualizada
+                carga[3] *= -1
             screen.blit(tipo_carga, (posicion_x_nube2 + carga_x, posicion_y_nube2 + carga_y))
-            carga[1] = carga_x  # Actualizar posición
+            carga[1] = carga_x
 
-    def mover_nube(posicion_x_nube2, direccion_nube2):
-        """Movimiento de la nube si el botón de rayo no se ha presionado."""
+        # Mostrar imagen de rayo si el intercambio se ha completado
+        if mostrar_rayo:
+            rayo_img = pygame.image.load('imagenes/rasho.png')
+            rayo_img = pygame.transform.scale(rayo_img, (100, 150))
+            screen.blit(rayo_img, (posicion_x_nube2 + 25, posicion_y_nube2 + 20))
 
+    def mover_nube():
+        """Mueve la nube horizontalmente mientras no esté activo el intercambio."""
+        nonlocal posicion_x_nube2, direccion_nube2
         posicion_x_nube2 += velocidad_nube2 * direccion_nube2
         if posicion_x_nube2 <= 0 or posicion_x_nube2 >= screen_width - 153:
-            direccion_nube2 *= -1  # Cambia la dirección
+            direccion_nube2 *= -1
+
+    def mover_cargas_en_tren(posicion_x_nube2, posicion_y_nube2):
+        global cargas_en_nube3, boton_rayo_presionado2
+
+    # Variable para controlar si se ha mostrado el rayo
+    rayo_mostrado = False
+
+    # Mover todas las cargas en el suelo hacia la nube
+    for i in range(len(cargas_suelo)):
+        carga_x, carga_y, tipo_carga = cargas_suelo[i]
+
+        # Movimiento horizontal hacia la nube
+        if carga_x < posicion_x_nube2:
+            carga_x += 1
+        elif carga_x > posicion_x_nube2:
+            carga_x -= 1
+
+        # Si la carga está directamente debajo de la nube, moverla verticalmente
+        if carga_x == posicion_x_nube2:
+            if carga_y > posicion_y_nube2 + 40:  # Ajusta este valor según sea necesario
+                carga_y -= 1  # Mover hacia arriba
+            else:
+                # Si la carga ha llegado a la nube, añadirla a la nube
+                cargas_en_nube3.append([tipo_carga, carga_x - posicion_x_nube2, carga_y - posicion_y_nube2, random.choice([-1, 1])])
+                cargas_suelo[i] = [random.randint(0, screen_width - 20), screen_height - 40, tipo_carga]  # Reiniciar carga en el suelo
+                rayo_mostrado = True  # Indicar que se debe mostrar el rayo
+
+        # Actualizar la posición de la carga
+        cargas_suelo[i] = [carga_x, carga_y, tipo_carga]
+
+    # Mostrar el rayo si se ha mostrado
+    if rayo_mostrado:
+        screen.blit(pygame.image.load('imagenes/rasho.png'), (posicion_x_nube2, posicion_y_nube2))
+        pygame.display.flip()
+        pygame.time.delay(1000)  # Mostrar el rayo por 1 segundo
+
+    boton_rayo_presionado2 = False  # Reactivar el botón de rayo
 
     run = True
     while run:
         screen.blit(fondo2, (0, 0))
         screen.blit(casita_snopy, (340, 178))
-        screen.blit(nube1, (posicion_x_nube2, posicion_y_nube2))
+        pantalla_principal()
 
-
-        pantalla_principal(posicion_x_nube2)
-
+        # Mover la nube y las cargas si el botón no está activo
         if not boton_rayo_presionado2:
-            mover_nube(posicion_x_nube2, direccion_nube2)  # Movimiento de la nube mientras no se presione el botón de rayo
-
+            mover_nube()
+        elif boton_rayo_presionado2 and not intercambio_activo:
+            intercambio_activo = True
+            mover_cargas_en_tren(posicion_x_nube2, posicion_y_nube2)
 
         # Movimiento de Snoopy
         posicion_x_snoopy2 += velocidad_snoopy2 * direccion_snoopy2
@@ -623,35 +646,35 @@ def escena_3():
         if contador_animacion_snoopy2 >= velocidad_animacion_snoopy2:
             contador_animacion_snoopy2 = 0
             indice_snoopy2 = (indice_snoopy2 + 1) % len(snoopy_caminando)
+
         if mirando_derecha2:
             screen.blit(snoopy_caminando[indice_snoopy2], (posicion_x_snoopy2, posicion_y_snoopy2))
         else:
             snoopy_volteado = pygame.transform.flip(snoopy_caminando[indice_snoopy2], True, False)
             screen.blit(snoopy_volteado, (posicion_x_snoopy2, posicion_y_snoopy2))
-            # Botón de interrogación
-        screen.blit(imagen_rayo, rayo_pos)
+
+        # Obtener posición del mouse en cada iteración
         mouse_pos = pygame.mouse.get_pos()
+
+        # Dibuja el botón de rayo y separador
         boton_rayo_rect = pygame.Rect(rayo_pos, (60, 60))
-        if boton_rayo_rect.collidepoint(mouse_pos):
-            screen.blit(imagen_rayo_hover, rayo_pos)
-        else:
-            screen.blit(imagen_rayo, rayo_pos)
         boton_separador_rect = pygame.Rect(boton_separador_pos, (60, 60))
-        if boton_separador_rect.collidepoint(mouse_pos):
-            screen.blit(imagen_separador_hover, boton_separador_pos)
-        else:
-            screen.blit(imagen_separador_normal, boton_separador_pos)
-            # Procesar eventos de Pygame
+        screen.blit(imagen_rayo_hover if boton_rayo_rect.collidepoint(mouse_pos) else imagen_rayo, rayo_pos)
+        screen.blit(imagen_separador_hover if boton_separador_rect.collidepoint(mouse_pos) else imagen_separador_normal, boton_separador_pos)
+
+        # Eventos de pygame
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 if boton_separador_rect.collidepoint(mouse_pos):
-                    return escena_separador()  # Cambia a la nueva escena
+                    run = False  # Cerrar escena_3
                 elif boton_rayo_rect.collidepoint(mouse_pos):
                     boton_rayo_presionado2 = True
-                    mover_cargas_en_tren(posicion_x_nube2, posicion_y_nube2)
+
         pygame.display.flip()
+
+
 
 "----------------------------------------------------------------------------------------------------------------------"
 #-----------------------------------------------------------------------------------------------------------------------
