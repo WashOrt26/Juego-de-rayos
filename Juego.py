@@ -521,9 +521,11 @@ def escena_3():
     velocidad_animacion_snoopy2 = 50
     mirando_derecha2 = True
     boton_rayo_presionado2 = False
+    mostrar_rayo = False
+    animacion_rayo_activa = False
+    contador_animacion_rayo = 0
 
     # Cargas en el suelo y en la nube
-    # Inicializar cargas en el suelo
     cantidad_cargas_suelo2 = 6
     cargas_suelo = [[random.randint(0, screen_width - 20), screen_height - 40, carga_positiva_img] for _ in range(cantidad_cargas_suelo2)]
     area_cargas_positivas = (posicion_x_nube2, posicion_y_nube2, 153, 40)
@@ -543,23 +545,14 @@ def escena_3():
         direccion = random.choice([-1, 1])
         cargas_en_nube3.append([carga_negativa_img, carga_x, carga_y, direccion])
 
-    velocidad_intercambio = 4
-    intercambio_activo = False
-    mostrar_rayo = False
+    # Cargar imagen del rayo
+    rayo_img = pygame.image.load('imagenes/rasho.png')
+    rayo_img = pygame.transform.scale(rayo_img, (100, 150))
 
     def pantalla_principal():
-        """Dibuja la escena principal y la nube con cargas."""
         screen.blit(fondo2, (0, 0))
+        screen.blit(casita_snopy, (340, 178))
         screen.blit(nube1, (posicion_x_nube2, posicion_y_nube2))
-
-        # Redibuja Snoopy y otros elementos aquí
-        screen.blit(casita_snopy, (340, 178))  # Asegúrate de redibujar Snoopy y otros elementos
-
-        mouse_pos = pygame.mouse.get_pos()
-
-        # Botón de rayo
-        boton_rayo_rect = pygame.Rect(rayo_pos, (60, 60))
-        screen.blit(imagen_rayo_hover if boton_rayo_rect.collidepoint(mouse_pos) else imagen_rayo, rayo_pos)
 
         # Dibujar cargas en el suelo
         for carga in cargas_suelo:
@@ -574,78 +567,76 @@ def escena_3():
             screen.blit(tipo_carga, (posicion_x_nube2 + carga_x, posicion_y_nube2 + carga_y))
             carga[1] = carga_x
 
-        # Mostrar imagen de rayo si el intercambio se ha completado
-        if mostrar_rayo:
-            rayo_img = pygame.image.load('imagenes/rasho.png')
-            rayo_img = pygame.transform.scale(rayo_img, (100, 150))
-            screen.blit(rayo_img, (posicion_x_nube2 + 25, posicion_y_nube2 + 20))
+        # Mostrar animación del rayo si está activa
+        if animacion_rayo_activa:
+            indice_sprite = contador_animacion_rayo // 5  # Cambiar sprite cada 5 frames
+            if indice_sprite < len(sprites_rayo):
+                screen.blit(sprites_rayo[indice_sprite], (posicion_x_nube2 + 25, posicion_y_nube2 + 20))
 
     def mover_nube():
-        """Mueve la nube horizontalmente mientras no esté activo el intercambio."""
         nonlocal posicion_x_nube2, direccion_nube2
-        posicion_x_nube2 += velocidad_nube2 * direccion_nube2
-        if posicion_x_nube2 <= 0 or posicion_x_nube2 >= screen_width - 153:
-            direccion_nube2 *= -1
+        if not boton_rayo_presionado2:
+            posicion_x_nube2 += velocidad_nube2 * direccion_nube2
+            if posicion_x_nube2 <= 0 or posicion_x_nube2 >= screen_width - 153:
+                direccion_nube2 *= -1
 
-    def mover_cargas_en_tren(posicion_x_nube2, posicion_y_nube2):
-        global cargas_en_nube3, boton_rayo_presionado2
+    # Cargar sprites del rayo
+    sprites_rayo = []
+    for i in range(1, 8):
+        sprite = pygame.image.load(f'imagenes/sprites_rayo/{i}.png')
+        sprite = pygame.transform.scale(sprite, (100, 150))
+        sprites_rayo.append(sprite)
 
-    # Variable para controlar si se ha mostrado el rayo
-    rayo_mostrado = False
+    def mover_cargas_en_tren():
+        for i in range(len(cargas_suelo) - 1, -1, -1):
+            carga_x, carga_y, tipo_carga = cargas_suelo[i]
 
-    # Mover todas las cargas en el suelo hacia la nube
-    for i in range(len(cargas_suelo)):
-        carga_x, carga_y, tipo_carga = cargas_suelo[i]
+            if carga_x < posicion_x_nube2 + 76:
+                carga_x += 1
+            elif carga_x > posicion_x_nube2 + 76:
+                carga_x -= 1
 
-        # Movimiento horizontal hacia la nube
-        if carga_x < posicion_x_nube2:
-            carga_x += 1
-        elif carga_x > posicion_x_nube2:
-            carga_x -= 1
+            if abs(carga_x - (posicion_x_nube2 + 76)) < 5:
+                if carga_y > posicion_y_nube2 + 40:
+                    carga_y -= 1
+                else:
+                    cargas_en_nube3.append([tipo_carga, carga_x - posicion_x_nube2, carga_y - posicion_y_nube2, random.choice([-1, 1])])
+                    cargas_suelo.pop(i)
+                    return True
 
-        # Si la carga está directamente debajo de la nube, moverla verticalmente
-        if carga_x == posicion_x_nube2:
-            if carga_y > posicion_y_nube2 + 40:  # Ajusta este valor según sea necesario
-                carga_y -= 1  # Mover hacia arriba
-            else:
-                # Si la carga ha llegado a la nube, añadirla a la nube
-                cargas_en_nube3.append([tipo_carga, carga_x - posicion_x_nube2, carga_y - posicion_y_nube2, random.choice([-1, 1])])
-                cargas_suelo[i] = [random.randint(0, screen_width - 20), screen_height - 40, tipo_carga]  # Reiniciar carga en el suelo
-                rayo_mostrado = True  # Indicar que se debe mostrar el rayo
-
-        # Actualizar la posición de la carga
-        cargas_suelo[i] = [carga_x, carga_y, tipo_carga]
-
-    # Mostrar el rayo si se ha mostrado
-    if rayo_mostrado:
-        screen.blit(pygame.image.load('imagenes/rasho.png'), (posicion_x_nube2, posicion_y_nube2))
-        pygame.display.flip()
-        pygame.time.delay(1000)  # Mostrar el rayo por 1 segundo
-
-    boton_rayo_presionado2 = False  # Reactivar el botón de rayo
+            cargas_suelo[i] = [carga_x, carga_y, tipo_carga]
+        return False
 
     run = True
     while run:
-        screen.blit(fondo2, (0, 0))
-        screen.blit(casita_snopy, (340, 178))
-        pantalla_principal()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if boton_rayo_rect.collidepoint(mouse_pos):
+                    boton_rayo_presionado2 = True
+                elif boton_separador_rect.collidepoint(mouse_pos):
+                    run = False
+                    escena_separador()
 
-        # Mover la nube y las cargas si el botón no está activo
-        if not boton_rayo_presionado2:
-            mover_nube()
-        elif boton_rayo_presionado2 and not intercambio_activo:
-            intercambio_activo = True
-            mover_cargas_en_tren(posicion_x_nube2, posicion_y_nube2)
+        mover_nube()
 
-        # Movimiento de Snoopy
         posicion_x_snoopy2 += velocidad_snoopy2 * direccion_snoopy2
         if posicion_x_snoopy2 <= 0 or posicion_x_snoopy2 >= screen_width - 90:
             direccion_snoopy2 *= -1
             mirando_derecha2 = not mirando_derecha2
+
         contador_animacion_snoopy2 += 1
         if contador_animacion_snoopy2 >= velocidad_animacion_snoopy2:
             contador_animacion_snoopy2 = 0
             indice_snoopy2 = (indice_snoopy2 + 1) % len(snoopy_caminando)
+
+        if boton_rayo_presionado2:
+            if mover_cargas_en_tren():
+                animacion_rayo_activa = True
+                contador_animacion_rayo = 0
+
+        pantalla_principal()
 
         if mirando_derecha2:
             screen.blit(snoopy_caminando[indice_snoopy2], (posicion_x_snoopy2, posicion_y_snoopy2))
@@ -653,24 +644,20 @@ def escena_3():
             snoopy_volteado = pygame.transform.flip(snoopy_caminando[indice_snoopy2], True, False)
             screen.blit(snoopy_volteado, (posicion_x_snoopy2, posicion_y_snoopy2))
 
-        # Obtener posición del mouse en cada iteración
         mouse_pos = pygame.mouse.get_pos()
-
-        # Dibuja el botón de rayo y separador
         boton_rayo_rect = pygame.Rect(rayo_pos, (60, 60))
         boton_separador_rect = pygame.Rect(boton_separador_pos, (60, 60))
+
         screen.blit(imagen_rayo_hover if boton_rayo_rect.collidepoint(mouse_pos) else imagen_rayo, rayo_pos)
         screen.blit(imagen_separador_hover if boton_separador_rect.collidepoint(mouse_pos) else imagen_separador_normal, boton_separador_pos)
 
-        # Eventos de pygame
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if boton_separador_rect.collidepoint(mouse_pos):
-                    run = False  # Cerrar escena_3
-                elif boton_rayo_rect.collidepoint(mouse_pos):
-                    boton_rayo_presionado2 = True
+        if animacion_rayo_activa:
+            contador_animacion_rayo += 1
+            if contador_animacion_rayo >= len(sprites_rayo) * 5:
+                animacion_rayo_activa = False
+                boton_rayo_presionado2 = False
+                # Reiniciar las cargas en el suelo
+                cargas_suelo = [[random.randint(0, screen_width - 20), screen_height - 40, carga_positiva_img] for _ in range(cantidad_cargas_suelo2)]
 
         pygame.display.flip()
 
