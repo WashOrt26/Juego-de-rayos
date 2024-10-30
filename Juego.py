@@ -400,7 +400,7 @@ boton_grande_presionado = False
 dialogos2 = [
     {"texto": "¡Hola, aquí abajo!", "duracion": 2000},  # 2 segundos
     {"texto": "aña", "duracion": 2000},  # 4 segundos
-    {"texto": "Mira bien lo \nque pasa\n en el \n cielo", "duracion": 3000},  # 3 segundos
+    {"texto": "QUE?, no sabes lo \n que ocurre?", "duracion": 3000},  # 3 segundos
 ]
 
 # Variables para controlar el estado de Woodstock
@@ -507,11 +507,19 @@ def escena_separador(woodstock_dialogo_index2=0, woodstock_x2=-50):
 def escena_3():
     global woodstock_movimiento2, woodstock_x, woodstock_contador, woodstock_animacion, woodstock_hablando2, boton_interrogacion_activo
 
+    snoopy_avisado = pygame.image.load('imagenes/Sprites_snoopy/Snoopy_avisado.png')
+    snoopy_aturdido = pygame.image.load('imagenes/Sprites_snoopy/Snoopy_aturdido.png')
+    snoopy_electrocutado = pygame.image.load('imagenes/Sprites_snoopy/Snoopy_electrocutado.png')
+
+    snoopy_avisado = pygame.transform.scale(snoopy_avisado, (70, 110))
+    snoopy_aturdido = pygame.transform.scale(snoopy_aturdido, (80, 120))
+    snoopy_electrocutado = pygame.transform.scale(snoopy_electrocutado, (120, 160))
+
     # Variables de la nube y Snoopy
     posicion_x_nube2 = random.randint(0, screen_width - 153)
     posicion_y_nube2 = 50
-    posicion_x_snoopy2 = random.randint(0, screen_width - 150)
-    posicion_y_snoopy2 = 220
+    posicion_x_snoopy2 = random.randint(0, screen_width - 80)
+    posicion_y_snoopy2 = screen_height - 120  # Ajustado para que Snoopy esté en el suelo
     velocidad_nube2 = 0.2
     velocidad_snoopy2 = 0.5
     direccion_nube2 = 1
@@ -524,6 +532,8 @@ def escena_3():
     mostrar_rayo = False
     animacion_rayo_activa = False
     contador_animacion_rayo = 0
+    estado_snoopy = 'caminando'
+    tiempo_aturdido = 0
 
     # Cargas en el suelo y en la nube
     cantidad_cargas_suelo2 = 6
@@ -544,10 +554,6 @@ def escena_3():
         carga_y = random.randint(0, area_cargas_negativas[3] - 20) + 35
         direccion = random.choice([-1, 1])
         cargas_en_nube3.append([carga_negativa_img, carga_x, carga_y, direccion])
-
-    # Cargar imagen del rayo
-    rayo_img = pygame.image.load('imagenes/rasho.png')
-    rayo_img = pygame.transform.scale(rayo_img, (100, 150))
 
     def pantalla_principal():
         screen.blit(fondo2, (0, 0))
@@ -571,7 +577,7 @@ def escena_3():
         if animacion_rayo_activa:
             indice_sprite = contador_animacion_rayo // 5  # Cambiar sprite cada 5 frames
             if indice_sprite < len(sprites_rayo):
-                screen.blit(sprites_rayo[indice_sprite], (posicion_x_nube2 + 25, posicion_y_nube2 + 20))
+                screen.blit(sprites_rayo[indice_sprite], (posicion_x_nube2 + 25, posicion_y_nube2 + 76))
 
     def mover_nube():
         nonlocal posicion_x_nube2, direccion_nube2
@@ -584,7 +590,7 @@ def escena_3():
     sprites_rayo = []
     for i in range(1, 8):
         sprite = pygame.image.load(f'imagenes/sprites_rayo/{i}.png')
-        sprite = pygame.transform.scale(sprite, (100, 150))
+        sprite = pygame.transform.scale(sprite, (100, 210))  # Aumentado el alto a 280
         sprites_rayo.append(sprite)
 
     def mover_cargas_en_tren():
@@ -606,6 +612,10 @@ def escena_3():
 
             cargas_suelo[i] = [carga_x, carga_y, tipo_carga]
         return False
+        # Añadir variables para el efecto de temblor
+    temblor_x = 0
+    temblor_y = 0
+    intensidad_temblor = 5
 
     run = True
     while run:
@@ -614,35 +624,76 @@ def escena_3():
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if boton_rayo_rect.collidepoint(mouse_pos):
-                    boton_rayo_presionado2 = True
+                    # Verificar si Snoopy está debajo de la nube
+                    if (posicion_x_snoopy2 + 80 > posicion_x_nube2) and (posicion_x_snoopy2 < posicion_x_nube2 + 153) and (posicion_y_snoopy2 + 120 >= posicion_y_nube2):
+                        boton_rayo_presionado2 = True
+                        estado_snoopy = 'avisado'  # Cambiar a estado avisado
                 elif boton_separador_rect.collidepoint(mouse_pos):
                     run = False
                     escena_separador()
 
         mover_nube()
+        pantalla_principal()
 
-        posicion_x_snoopy2 += velocidad_snoopy2 * direccion_snoopy2
-        if posicion_x_snoopy2 <= 0 or posicion_x_snoopy2 >= screen_width - 90:
-            direccion_snoopy2 *= -1
-            mirando_derecha2 = not mirando_derecha2
+        # Dibujar Snoopy según su estado
+        if estado_snoopy == 'caminando':
+            posicion_x_snoopy2 += velocidad_snoopy2 * direccion_snoopy2
+            if posicion_x_snoopy2 <= 0 or posicion_x_snoopy2 >= screen_width - 80:
+                direccion_snoopy2 *= -1
+                mirando_derecha2 = not mirando_derecha2
 
-        contador_animacion_snoopy2 += 1
-        if contador_animacion_snoopy2 >= velocidad_animacion_snoopy2:
-            contador_animacion_snoopy2 = 0
-            indice_snoopy2 = (indice_snoopy2 + 1) % len(snoopy_caminando)
+            contador_animacion_snoopy2 += 1
+            if contador_animacion_snoopy2 >= velocidad_animacion_snoopy2:
+                contador_animacion_snoopy2 = 0
+                indice_snoopy2 = (indice_snoopy2 + 1) % len(snoopy_caminando)
 
-        if boton_rayo_presionado2:
+            if mirando_derecha2:
+                screen.blit(snoopy_caminando[indice_snoopy2], (posicion_x_snoopy2, posicion_y_snoopy2))
+            else:
+                snoopy_volteado = pygame.transform.flip(snoopy_caminando[indice_snoopy2], True, False)
+                screen.blit(snoopy_volteado, (posicion_x_snoopy2, posicion_y_snoopy2))
+
+        elif estado_snoopy == 'avisado':
+            screen.blit(snoopy_avisado, (posicion_x_snoopy2, posicion_y_snoopy2))
             if mover_cargas_en_tren():
                 animacion_rayo_activa = True
                 contador_animacion_rayo = 0
+                estado_snoopy = 'electrocutado'
+                tiempo_inicio_electrocutado = pygame.time.get_ticks()
 
-        pantalla_principal()
+        elif estado_snoopy == 'electrocutado':
+            # Efecto de temblor
+            tiempo_actual = pygame.time.get_ticks()
+            tiempo_electrocutado = tiempo_actual - tiempo_inicio_electrocutado
 
-        if mirando_derecha2:
-            screen.blit(snoopy_caminando[indice_snoopy2], (posicion_x_snoopy2, posicion_y_snoopy2))
-        else:
-            snoopy_volteado = pygame.transform.flip(snoopy_caminando[indice_snoopy2], True, False)
-            screen.blit(snoopy_volteado, (posicion_x_snoopy2, posicion_y_snoopy2))
+            if tiempo_electrocutado < 2000:  # Duración del efecto de electrocutado (2 segundos)
+                # Generar temblor aleatorio
+                temblor_x = random.randint(-intensidad_temblor, intensidad_temblor)
+                temblor_y = random.randint(-intensidad_temblor, intensidad_temblor)
+
+                # Aplicar el temblor a la posición de Snoopy
+                pos_x_temblor = posicion_x_snoopy2 + temblor_x
+                pos_y_temblor = posicion_y_snoopy2 + temblor_y
+
+                # Dibujar Snoopy electrocutado con efecto de temblor
+                screen.blit(snoopy_electrocutado, (pos_x_temblor, pos_y_temblor))
+
+                # Efecto adicional: cambiar rápidamente entre normal y volteado
+                if tiempo_electrocutado % 100 < 50:  # Cambiar cada 50 ms
+                    screen.blit(snoopy_electrocutado, (pos_x_temblor, pos_y_temblor))
+                else:
+                    snoopy_electrocutado_volteado = pygame.transform.flip(snoopy_electrocutado, True, False)
+                    screen.blit(snoopy_electrocutado_volteado, (pos_x_temblor, pos_y_temblor))
+            else:
+                estado_snoopy = 'aturdido'
+                tiempo_aturdido = pygame.time.get_ticks()
+
+        elif estado_snoopy == 'aturdido':
+            screen.blit(snoopy_aturdido, (posicion_x_snoopy2, posicion_y_snoopy2))
+            if pygame.time.get_ticks() - tiempo_aturdido >= 1000:
+                estado_snoopy = 'caminando'
+                boton_rayo_presionado2 = False
+
 
         mouse_pos = pygame.mouse.get_pos()
         boton_rayo_rect = pygame.Rect(rayo_pos, (60, 60))
@@ -652,12 +703,27 @@ def escena_3():
         screen.blit(imagen_separador_hover if boton_separador_rect.collidepoint(mouse_pos) else imagen_separador_normal, boton_separador_pos)
 
         if animacion_rayo_activa:
-            contador_animacion_rayo += 1
-            if contador_animacion_rayo >= len(sprites_rayo) * 5:
+            tiempo_actual = pygame.time.get_ticks()  # Obtener el tiempo actual
+            if not hasattr(escena_3, 'tiempo_inicio_rayo'):
+                escena_3.tiempo_inicio_rayo = tiempo_actual  # Guardar el tiempo de inicio
+
+            # Calcular el tiempo transcurrido
+            tiempo_transcurrido = tiempo_actual - escena_3.tiempo_inicio_rayo
+
+            # Si no han pasado 2 segundos, continuar la animación
+            if tiempo_transcurrido < 2000:  # 2000 ms = 2 segundos
+                contador_animacion_rayo += 1
+                indice_sprite = (contador_animacion_rayo // 5) % len(sprites_rayo)
+                screen.blit(sprites_rayo[indice_sprite], (posicion_x_nube2 + 25, posicion_y_nube2 + 76))
+            else:
+                # Después de 2 segundos, resetear todo
                 animacion_rayo_activa = False
                 boton_rayo_presionado2 = False
+                delattr(escena_3, 'tiempo_inicio_rayo')  # Limpiar el tiempo guardado
                 # Reiniciar las cargas en el suelo
-                cargas_suelo = [[random.randint(0, screen_width - 20), screen_height - 40, carga_positiva_img] for _ in range(cantidad_cargas_suelo2)]
+                cargas_suelo = [[random.randint(0, screen_width - 20), screen_height - 40, carga_positiva_img]
+                                for _ in range(cantidad_cargas_suelo2)]
+
 
         pygame.display.flip()
 
