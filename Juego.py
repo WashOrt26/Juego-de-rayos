@@ -2,9 +2,25 @@ import random
 
 import pygame
 
+import sys
+import subprocess  # Para ejecutar otro archivo
+
 
 pygame.init()
 pygame.font.init()
+
+pygame.mixer.init()
+
+pygame.mixer.music.load("musiquita/sonido_fondo.mp3")  # Cargar la música
+pygame.mixer.music.set_volume(0.2)
+pygame.mixer.music.play(-1)  # Reproducir la música en bucle
+# Cargar efectos de sonido
+woodstock_camina_sound = pygame.mixer.Sound("musiquita/woodstock_camina.wav")
+woodstock_habla_sound = pygame.mixer.Sound("musiquita/woodstock_habla.wav")
+snoopy_avisado_sound = pygame.mixer.Sound("musiquita/mmm.wav")  # Cargar el nuevo sonido
+rayo_cayendo_sound = pygame.mixer.Sound("musiquita/rayo_cayendo.mp3")  # Cargar el sonido del rayo
+asado_sound = pygame.mixer.Sound("musiquita/asado.wav")  # Cargar el sonido de asado
+
 
 # Definición de alto y ancho de la ventana
 screen_width = 480
@@ -13,11 +29,43 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Simulador de rayo')
 
 # Cargando imágenes y definiendo variables
+fondo_menu = pygame.image.load("Imagenes/1.png")
+fondo_menu = pygame.transform.scale(fondo_menu, (screen_width, screen_height))
+
+# Cargar y escalar el botón (ajustado proporcionalmente)
+boton_img = pygame.image.load("Imagenes/Boton.png")
+boton_img = pygame.transform.scale(boton_img, (screen_width // 3, screen_height // 4))  # Ajusta el tamaño del botón
+boton_rect = boton_img.get_rect(center=(screen_width // 2.2, screen_height // 1.53))
+
+# Resto de las imágenes y variables para el simulador
+# (Carga de imágenes, diálogo, etc. como en tu código original)
+
+def menu_principal():
+    run = True
+    while run:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+                if boton_rect.collidepoint(evento.pos):
+                    escena_simulador()  # Cambiar a la función escena_simulador
+
+        # Dibujar el fondo y el botón
+        screen.blit(fondo_menu, (0, 0))
+        screen.blit(boton_img, boton_rect)
+
+        pygame.display.flip()
+
+
+# Cargando imágenes y definiendo variables
 fondo2 = pygame.image.load('imagenes/Fondo2.png')
 fondo2 = pygame.transform.scale(fondo2, (480, 360))
 
 nube1 = pygame.image.load('imagenes/Nube1.png')
 nube1 = pygame.transform.scale(nube1, (153, 82))
+
+
 
 snoopy_caminando_1 = pygame.image.load('imagenes/Sprites_snoopy/Snoopy_caminando_1.png')
 snoopy_caminando_1 = pygame.transform.scale(snoopy_caminando_1, (80, 120))
@@ -238,10 +286,16 @@ def escena_simulador():
 
             if woodstock_contador >= 120:  # Después de 4 segundos (60 fps * 4)
                 woodstock_movimiento2 = False
+                woodstock_camina_sound.stop()  # Detener el sonido de caminata de Woodstock
                 woodstock_hablando2 = True
+
+            # Reproducir el sonido de Woodstock caminando
+            if not woodstock_camina_sound.get_num_channels():
+                woodstock_camina_sound.play()
 
         # Si Woodstock ya está en posición y debe hablar
         if woodstock_hablando2:
+            woodstock_camina_sound.stop()  # Detener el sonido de caminata de Woodstock
             # Renderizar Woodstock estático mientras habla
             screen.blit(woodstock_estatico_1, (woodstock_x, screen_height - 70))
 
@@ -260,6 +314,10 @@ def escena_simulador():
                 texto_actual = dialogos[indice_texto]["texto"]
                 renderizar_texto(texto_actual, (globo_x+80, globo_y +50))  # Mostrar texto dentro del globo
 
+                # Reproducir el sonido de Woodstock hablando
+                if not woodstock_habla_sound.get_num_channels():
+                    woodstock_habla_sound.play()
+
             if indice_texto >= len(dialogos):
                 woodstock_hablando2 = False  # Termina el diálogo
 
@@ -267,8 +325,7 @@ def escena_simulador():
         if not woodstock_movimiento2 and not woodstock_hablando2:
             screen.blit(woodstock_estatico_1, (woodstock_x, screen_height - 70))
 
-
-    # Procesar eventos de Pygame
+        # Procesar eventos de Pygame
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -280,6 +337,8 @@ def escena_simulador():
                     # Verificar si se hace clic en el botón separador
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if boton_separador_rect.collidepoint(mouse_pos):
+                    woodstock_camina_sound.stop()  # Detener el sonido de caminata de Woodstock
+                    woodstock_habla_sound.stop()  # Detener el sonido de habla de Woodstock
                     return escena_separador()  # Cambia a la nueva escena
 
         pygame.display.flip()
@@ -381,7 +440,7 @@ def manejar_movimiento_cargas():
 
 fuente_pixel = pygame.font.Font('imagenes/PixelifySans-SemiBold.ttf',20)  # Cambia esto por tu fuente de pixel si la tienes
 texto_surface = fuente_pixel.render("Presione esc para saltar", True, (0, 0, 0))
-texto_rect = texto_surface.get_rect(topright=(480 - 10, 10))  # Posición arriba a la derecha
+texto_rect = texto_surface.get_rect(topright=(268 - 10, 10))  # Posición arriba a la derecha
 
 # Cargar imágenes del botón y redimensionarlas
 boton_grande_imagen_normal = pygame.image.load('imagenes/interrogacion.png')
@@ -399,8 +458,9 @@ boton_grande_presionado = False
 
 dialogos2 = [
     {"texto": "¡Hola, aquí abajo!", "duracion": 2000},  # 2 segundos
-    {"texto": "aña", "duracion": 2000},  # 4 segundos
     {"texto": "QUE?, no sabes lo \n que ocurre?", "duracion": 3000},  # 3 segundos
+    {"texto": "Mira, en la nube \nhay dos tipos de \npartículas: ", "duracion": 3000},  # 3 segundos
+    {"texto": "el graupel, que \nes como bolitas de hielo,\n y los copos de nieve.", "duracion": 3000},  # 3 segundos
 ]
 
 # Variables para controlar el estado de Woodstock
@@ -431,7 +491,14 @@ def dibujar_boton():
         screen.blit(boton_grande_imagen_normal, boton_grande_rect.topleft)
 
 def escena_separador(woodstock_dialogo_index2=0, woodstock_x2=-50):
-    global woodstock_visible, woodstock_deslizandose, dialogo_tiempo, boton_grande_presionado, woodstock_movimiento2, woodstock_hablando2, woodstock_x, woodstock_dialogo_tiempo2
+    global woodstock_movimiento2, woodstock_hablando2, woodstock_dialogo_tiempo2
+
+    # Asegúrate de que el movimiento de Woodstock esté desactivado al entrar en la escena separador
+    woodstock_movimiento2 = False
+    woodstock_hablando2 = False
+    woodstock_x2 = -120  # Posición inicial fuera de la pantalla
+    woodstock_regresando = False  # Nueva variable para controlar el regreso de Woodstock
+
     run = True
 
     while run:
@@ -456,11 +523,11 @@ def escena_separador(woodstock_dialogo_index2=0, woodstock_x2=-50):
 
         # Si Woodstock ya está en posición y debe hablar
         if woodstock_hablando2:
-            screen.blit(woodstock_estatico_2, (woodstock_x2, screen_height // 2 -60))
+            screen.blit(woodstock_estatico_2, (woodstock_x2, screen_height // 2 - 60))
 
             # Posición del globo de texto con relación a Woodstock
             globo_x = woodstock_x2 + 10
-            globo_y = screen_height // 2 -200
+            globo_y = screen_height // 2 - 200
             screen.blit(globo_texto, (globo_x, globo_y))
 
             # Control del diálogo
@@ -471,16 +538,20 @@ def escena_separador(woodstock_dialogo_index2=0, woodstock_x2=-50):
 
             if woodstock_dialogo_index2 < len(dialogos2):
                 texto_actual = dialogos2[woodstock_dialogo_index2]["texto"]
-                renderizar_texto2(texto_actual, (globo_x + 80, globo_y + 50))
+                renderizar_texto2(texto_actual, (globo_x + 80, globo_y + 37))
 
             else:
-                woodstock_dialogo_index2 += 1
-                if woodstock_dialogo_index2 >= len(dialogos2):
-                    woodstock_hablando2 = False  # Terminar de hablar
-                    woodstock_dialogo_index2 = 0  # Reiniciar el índice de diálogo
-                    woodstock_x2 = -120  # Volver a la posición inicial
-                else:
-                    woodstock_dialogo_tiempo2 = tiempo_actual2  # Reiniciar el tiempo del nuevo diálogo
+                woodstock_hablando2 = False  # Terminar de hablar
+                woodstock_dialogo_index2 = 0  # Reiniciar el índice de diálogo
+                woodstock_regresando = True  # Comienza el regreso
+
+        # Movimiento de regreso de Woodstock
+        if woodstock_regresando:
+            woodstock_x2 -= 0.5  # Deslizar hacia la izquierda
+            screen.blit(woodstock_estatico_2, (woodstock_x2, screen_height // 2 - 60))  # Renderizar mientras se desliza
+            if woodstock_x2 <= -120:  # Cuando regrese a la posición inicial
+                woodstock_x2 = -120  # Asegurarse de que no se pase de la posición
+                woodstock_regresando = False  # Detener el regreso
 
         # Procesar eventos de Pygame
         for event in pygame.event.get():
@@ -490,11 +561,9 @@ def escena_separador(woodstock_dialogo_index2=0, woodstock_x2=-50):
             if event.type == pygame.MOUSEBUTTONDOWN and boton_interrogacion_pos[0] < event.pos[0] < boton_interrogacion_pos[0] + 30 and boton_interrogacion_pos[1] < event.pos[1] < boton_interrogacion_pos[1] + 30:
                 woodstock_movimiento2 = True
 
-
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:  # Presiona ESC para volver
                     escena_3()
-
 
         pygame.display.flip()
 
@@ -628,6 +697,7 @@ def escena_3():
                     if (posicion_x_snoopy2 + 80 > posicion_x_nube2) and (posicion_x_snoopy2 < posicion_x_nube2 + 153) and (posicion_y_snoopy2 + 120 >= posicion_y_nube2):
                         boton_rayo_presionado2 = True
                         estado_snoopy = 'avisado'  # Cambiar a estado avisado
+                        snoopy_avisado_sound.play()  # Reproducir el sonido de Snoopy avisado
                 elif boton_separador_rect.collidepoint(mouse_pos):
                     run = False
                     escena_separador()
@@ -660,6 +730,7 @@ def escena_3():
                 contador_animacion_rayo = 0
                 estado_snoopy = 'electrocutado'
                 tiempo_inicio_electrocutado = pygame.time.get_ticks()
+                rayo_cayendo_sound.play()  # Reproducir el sonido del rayo
 
         elif estado_snoopy == 'electrocutado':
             # Efecto de temblor
@@ -687,13 +758,15 @@ def escena_3():
             else:
                 estado_snoopy = 'aturdido'
                 tiempo_aturdido = pygame.time.get_ticks()
+                rayo_cayendo_sound.stop()  # Detener el sonido del rayo
+                asado_sound.play()  # Reproducir el sonido de asado
 
         elif estado_snoopy == 'aturdido':
             screen.blit(snoopy_aturdido, (posicion_x_snoopy2, posicion_y_snoopy2))
             if pygame.time.get_ticks() - tiempo_aturdido >= 1000:
                 estado_snoopy = 'caminando'
                 boton_rayo_presionado2 = False
-
+                asado_sound.stop()  # Detener el sonido de asado
 
         mouse_pos = pygame.mouse.get_pos()
         boton_rayo_rect = pygame.Rect(rayo_pos, (60, 60))
@@ -705,7 +778,7 @@ def escena_3():
         if animacion_rayo_activa:
             tiempo_actual = pygame.time.get_ticks()  # Obtener el tiempo actual
             if not hasattr(escena_3, 'tiempo_inicio_rayo'):
-                escena_3.tiempo_inicio_rayo = tiempo_actual  # Guardar el tiempo de inicio
+                escena_3.tiempo_inicio_rayo = tiempo_actual # Guardar el tiempo de inicio
 
             # Calcular el tiempo transcurrido
             tiempo_transcurrido = tiempo_actual - escena_3.tiempo_inicio_rayo
@@ -736,5 +809,5 @@ def escena_3():
 "----------------------------------------------------------------------------------------------------------------------"
 
 if __name__ == '__main__':
-    escena_simulador()
+    menu_principal()
     pygame.quit()
