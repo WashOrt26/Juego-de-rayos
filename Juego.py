@@ -460,7 +460,18 @@ dialogos2 = [
     {"texto": "¡Hola, aquí abajo!", "duracion": 2000},  # 2 segundos
     {"texto": "QUE?, no sabes lo \n que ocurre?", "duracion": 3000},  # 3 segundos
     {"texto": "Mira, en la nube \nhay dos tipos de \npartículas: ", "duracion": 3000},  # 3 segundos
-    {"texto": "el graupel, que \nes como bolitas de hielo,\n y los copos de nieve.", "duracion": 3000},  # 3 segundos
+    {"texto": "el graupel, que \nes como bolitas\n de hielo,\n.", "duracion": 3000},  # 3 segundos
+    {"texto": "y los copos\n de nieve", "duracion": 2000},  # 3 segundos
+    {"texto": "Cuando el graupel\n y los copos de\n nieve chocan,", "duracion": 2000},  # 3 segundos
+    {"texto": "el graupel se\n queda con cargas \npositivas", "duracion": 2000},  # 3 segundos
+    {"texto": "y los copos \nde nieve \n", "duracion": 2000},  # 3 segundos
+    {"texto": "se quedan\n con cargas \nnegativas", "duracion": 2000},  # 3 segundos
+    {"texto": "y van a la \nparte baja de\n la nube.", "duracion": 2000},  # 3 segundos
+    {"texto": "así, la nube \n se carga:", "duracion": 2000},  # 3 segundos
+    {"texto": "la parte de arriba \ncon cargas \npositivas ", "duracion": 2000},  # 3 segundos
+    {"texto": "y la de abajo\n con negativas.", "duracion": 2000},  # 3 segundos
+    {"texto": " ¡Y cuando se \nacumula suficiente \ncarga,", "duracion": 2000},  # 3 segundos
+    {"texto": " se puede formar \nun rayo!", "duracion": 2000},  # 3 segundos
 ]
 
 # Variables para controlar el estado de Woodstock
@@ -477,7 +488,7 @@ woodstock_estatico_2 = pygame.image.load('imagenes/Sprites_woodstock/woodstock_e
 woodstock_estatico_2 = pygame.transform.scale(woodstock_estatico_2, (120, 120))  # Ajusta el tamaño de Woodstock
 
 def renderizar_texto2(texto2, posicion2):
-    fuente = pygame.font.Font('imagenes/PixelifySans-SemiBold.ttf', 20)
+    fuente = pygame.font.Font('imagenes/PixelifySans-SemiBold.ttf', 14)
     lineas = texto2.split('\n')
     for i, linea in enumerate(lineas):
         superficie_texto = fuente.render(linea, True, (0, 0, 0))
